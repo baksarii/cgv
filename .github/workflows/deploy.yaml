@@ -1,0 +1,79 @@
+name: EKS Multi-Service CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main # main 브랜치에 푸시될 때마다 실행
+
+env:
+  AWS_REGION: ap-northeast-2
+  EKS_CLUSTER_NAME: cgv-eks
+  AWS_ACCOUNT_ID: 343218219945 # 고객님의 AWS 계정 ID
+
+  # --- ECR URI 설정 (반드시 고객님의 ECR URI로 확인/대체되어야 함) ---
+  ECR_URI_GATEWAY: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api
+  ECR_URI_BOOKING: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service
+  ECR_URI_SHOWTIME: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/showtime-service
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC 인증을 위해 필요
+      contents: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. AWS Credentials 설정 (OIDC를 통해 IAM 역할 사용)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # 'github-oidc-deployer' 역할 ARN 사용
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/eksctl-cgv-eks-addon-iamserviceaccount-default-github-oidc-deployer-Role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 2. ECR 로그인
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      # 3. 서비스별 빌드, 태그 지정, ECR 푸시
+      - name: Build, tag, and push images
+        id: build_push
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Gateway-API 빌드 및 푸시
+          docker build -t ${{ env.ECR_URI_GATEWAY }}:${{ env.IMAGE_TAG }} -f gateway-api/Dockerfile ./gateway-api
+          docker push ${{ env.ECR_URI_GATEWAY }}:${{ env.IMAGE_TAG }}
+          
+          # Booking-Service 빌드 및 푸시
+          docker build -t ${{ env.ECR_URI_BOOKING }}:${{ env.IMAGE_TAG }} -f booking-service/Dockerfile ./booking-service
+          docker push ${{ env.ECR_URI_BOOKING }}:${{ env.IMAGE_TAG }}
+          
+          # Showtime-Service 빌드 및 푸시
+          docker build -t ${{ env.ECR_URI_SHOWTIME }}:${{ env.IMAGE_TAG }} -f showtime-service/Dockerfile ./showtime-service
+          docker push ${{ env.ECR_URI_SHOWTIME }}:${{ env.IMAGE_TAG }}
+
+      # 4. EKS 배포 (kubectl apply)
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+        
+      - name: Deploy to EKS
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # k8s YAML 파일 내의 이미지 URI 플레이스홀더를 실제 빌드된 태그로 대체합니다.
+          
+          # 1. Gateway
+          sed -i "s|PLACEHOLDER_ECR_URI_GATEWAY:latest|${{ env.ECR_URI_GATEWAY }}:${{ env.IMAGE_TAG }}|g" k8s-deploy.yaml
+          
+          # 2. Booking
+          sed -i "s|PLACEHOLDER_ECR_URI_BOOKING:latest|${{ env.ECR_URI_BOOKING }}:${{ env.IMAGE_TAG }}|g" k8s-deploy.yaml
+          
+          # 3. Showtime
+          sed -i "s|PLACEHOLDER_ECR_URI_SHOWTIME:latest|${{ env.ECR_URI_SHOWTIME }}:${{ env.IMAGE_TAG }}|g" k8s-deploy.yaml
+          
+          # 최종 YAML 파일을 EKS에 적용합니다.
+          kubectl apply -f k8s-deploy.yaml
