@@ -31,7 +31,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           # 'github-oidc-deployer' 역할 ARN 사용
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/eksctl-cgv-eks-addon-iamserviceaccount-default-github-oidc-deployer-Role
+          role-to-assume: arn:aws:iam::343218219945:role/eksctl-cgv-eks-addon-iamserviceaccount-defaul-Role1-vNRYQ5LeHUcr
           aws-region: ${{ env.AWS_REGION }}
 
       # 2. ECR 로그인

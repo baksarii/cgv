@@ -17,7 +17,6 @@ spec:
     spec:
       containers:
       - name: showtime
-        # ECR URI를 여기에 입력 (GitHub Actions에서 태그가 변경될 예정)
         image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api:latest 
         ports:
         - containerPort: 3001
@@ -94,7 +93,6 @@ spec:
       - name: gateway
         image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/showtime-service:latest
         env:
-        # Gateway 코드에서 사용되는 내부 서비스 URL을 Kubernetes Service 이름으로 지정
         - name: SHOWTIME_SERVICE_URL
           value: http://showtime-service:3001
         - name: BOOKING_SERVICE_URL
