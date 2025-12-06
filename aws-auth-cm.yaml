@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  # 노드 그룹 역할은 AWS가 자동으로 관리하므로 mapRoles는 비워둡니다.
+  # 만약 노드 그룹 조인이 실패했다면 여기에 노드 역할 ARN을 추가해야 하지만,
+  # 현재는 사용자(User) 추가에 집중합니다.
+  mapRoles: |
+    []
+  
+  # 클러스터 관리자(현재 IAM 사용자)를 추가합니다.
+  mapUsers: |
+    - userarn: arn:aws:iam::343218219945:root
+      username: admin
+      groups:
+        - system:masters

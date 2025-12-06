@@ -1,0 +1,56 @@
+name: CI/CD to EKS via GitHub OIDC
+
+on:
+  push:
+    branches:
+      - main # main 브랜치에 푸시될 때마다 실행
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: simple-eks-app
+  EKS_CLUSTER_NAME: cgv-eks
+  AWS_ACCOUNT_ID: 343218219945 # 고객님의 AWS 계정 ID로 변경
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC 인증을 위해 필요
+      contents: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::343218219945:role/eksctl-cgv-eks-addon-iamserviceaccount-default-github-oidc-deployer-Role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 1. Docker 이미지 빌드 및 ECR 로그인
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      - name: Build, tag, and push image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Docker 이미지 빌드
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f simple-api/Dockerfile simple-api/
+          # ECR에 푸시
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+      # 2. EKS 배포 (kubectl apply)
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+        
+      - name: Deploy to EKS
+        run: |
+          # k8s YAML 파일을 EKS에 적용 (이미지 태그 업데이트)
+          sed -i "s|PLACEHOLDER_IMAGE_URI|${{ env.IMAGE_URI }}|g" k8s-deploy.yaml
+          kubectl apply -f k8s-deploy.yaml
