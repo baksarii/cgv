@@ -60,7 +60,7 @@ jobs:
         uses: azure/setup-kubectl@v4
         with:
           version: 'v1.29.0'
-          
+
       # 4. EKS 배포 (kubectl apply)
       - name: Deploy to EKS
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }} --role-arn arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/eksctl-cgv-eks-addon-iamserviceaccount-defaul-Role1-vNRYQ5LeHUcr
@@ -69,7 +69,8 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # k8s YAML 파일 내의 이미지 URI 플레이스홀더를 실제 빌드된 태그로 대체합니다.
+          # Kubeconfig 업데이트 및 인증  
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
           
           # 1. Gateway
           sed -i "s|PLACEHOLDER_ECR_URI_GATEWAY:latest|${{ env.ECR_URI_GATEWAY }}:${{ env.IMAGE_TAG }}|g" k8s-deploy.yaml
