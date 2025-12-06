@@ -62,7 +62,7 @@ jobs:
           version: '1.29' # 사용 중인 EKS 버전에 맞는 kubectl 버전을 사용합니다.
 
       # 4. EKS 배포 (kubectl apply)
-      - name: Update kubeconfig
+      - name: Deploy to EKS
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }} --role-arn arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/eksctl-cgv-eks-addon-iamserviceaccount-defaul-Role1-vNRYQ5LeHUcr
         
       - name: Deploy to EKS
