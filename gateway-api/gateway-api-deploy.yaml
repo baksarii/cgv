@@ -1,0 +1,68 @@
+# gateway-api-deploy.yaml 및 ingress.yaml (별도 파일로 관리 권장)
+
+---
+# 3. Gateway API Deployment (DB 연결 필요 없음)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-api
+  labels:
+    app: gateway-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway-api
+  template:
+    metadata:
+      labels:
+        app: gateway-api
+    spec:
+      containers:
+      - name: gateway-api
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api
+        ports:
+        - containerPort: 3000 # 실제 API Gateway가 리스닝하는 포트
+        # Gateway는 booking-service를 호출하므로 DB_HOST 정보는 필요 없음
+
+---
+# 4. Gateway API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-api-svc
+  labels:
+    app: gateway-api
+spec:
+  selector:
+    app: gateway-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+
+---
+# 5. Ingress (ALB 생성 및 외부 노출)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing 
+    alb.ingress.kubernetes.io/target-type: ip 
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # aws-load-balancer-controller가 ALB를 생성하도록 지시
+spec:
+  rules:
+  - http:
+      paths:
+      # 모든 외부 트래픽을 API Gateway 서비스로 전달
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-api-svc
+            port:
+              number: 80 # gateway-api-svc의 포트

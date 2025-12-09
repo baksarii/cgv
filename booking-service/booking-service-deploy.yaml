@@ -1,0 +1,66 @@
+# booking-service-deploy.yaml
+
+---
+# 1. Deployment (Pod 정의 및 RDS Secret 연결)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service
+  labels:
+    app: booking-service
+spec:
+  replicas: 2 # 필요에 따라 Pod 개수 조정
+  selector:
+    matchLabels:
+      app: booking-service
+  template:
+    metadata:
+      labels:
+        app: booking-service
+    spec:
+      containers:
+      - name: booking-service
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service
+        ports:
+        - containerPort: 3002 # server.js가 리스닝하는 포트
+        
+        # ⬇️ RDS 연결 환경 변수 주입 (rds-credentials Secret 사용) ⬇️
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: rds-credentials
+              key: host
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: rds-credentials
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rds-credentials
+              key: password
+        # ⬆️ RDS 연결 환경 변수 주입 끝 ⬆️
+        
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+---
+# 2. Service (내부 로드 밸런싱 정의)
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service-svc
+  labels:
+    app: booking-service
+spec:
+  selector:
+    app: booking-service # Deployment의 Label과 일치
+  ports:
+    - protocol: TCP
+      port: 80 # Service가 노출할 포트
+      targetPort: 3002 # 컨테이너 포트 (위의 containerPort와 일치)
+  type: ClusterIP # 내부에서만 접근 가능하도록 설정
