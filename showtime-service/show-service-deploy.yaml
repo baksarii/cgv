@@ -1,0 +1,43 @@
+# showtime-service-deploy.yaml
+
+---
+# 1. Deployment (Pod 정의)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: showtime-service
+  labels:
+    app: showtime-service
+spec:
+  replicas: 2 # 필요에 따라 Pod 개수 조정
+  selector:
+    matchLabels:
+      app: showtime-service
+  template:
+    metadata:
+      labels:
+        app: showtime-service
+    spec:
+      containers:
+      - name: showtime-service
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/showtime-service:5cc010cd9d200809a1c34d8b39f23a58ab20ae1a
+        ports:
+        - containerPort: 3001 # 💡 showtime-service의 실제 리스닝 포트
+        # showtime-service가 DB를 사용한다면, booking-service처럼 Secret을 연결해야 함
+        
+---
+# 2. Service (내부 로드 밸런싱 정의)
+apiVersion: v1
+kind: Service
+metadata:
+  name: showtime-service-svc
+  labels:
+    app: showtime-service
+spec:
+  selector:
+    app: showtime-service # Deployment의 Label과 일치
+  ports:
+    - protocol: TCP
+      port: 80 # Service가 노출할 포트
+      targetPort: 3001 # 💡 컨테이너 포트와 일치
+  type: ClusterIP

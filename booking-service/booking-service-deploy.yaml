@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: booking-service
-        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service:5cc010cd9d200809a1c34d8b39f23a58ab20ae1a
         ports:
         - containerPort: 3002 # server.js가 리스닝하는 포트
         

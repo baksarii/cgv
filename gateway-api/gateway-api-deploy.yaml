@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: gateway-api
-        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api:5cc010cd9d200809a1c34d8b39f23a58ab20ae1a
         ports:
         - containerPort: 3000 # 실제 API Gateway가 리스닝하는 포트
         # Gateway는 booking-service를 호출하므로 DB_HOST 정보는 필요 없음
