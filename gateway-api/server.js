@@ -14,7 +14,7 @@ const BOOKING_SERVICE_URL = 'http://booking-service-svc:80';
 app.use('/api/v1/showtimes', proxy(SHOWTIME_SERVICE_URL, {
     proxyReqPathResolver: req => {
         // 🚨 수정: 제거된 '/api/v1/showtimes' 경로를 다시 붙여서 전달합니다.
-        const path = `/api/v1/showtimes${req.url}`; 
+        const path = `${req.url}`;
         console.log(`[Showtime] Forwarding to: ${path}`);
         return path;
     }
@@ -23,8 +23,9 @@ app.use('/api/v1/showtimes', proxy(SHOWTIME_SERVICE_URL, {
 // 2. Booking Service로 라우팅
 app.use('/api/v1/bookings', proxy(BOOKING_SERVICE_URL, {
     proxyReqPathResolver: req => {
-        // 🚨 수정: 제거된 '/api/v1/bookings' 경로를 다시 붙여서 전달합니다.
-        const path = `/api/v1/bookings${req.url}`;
+        // 🚨 수정: 제거된 '/api/v1/bookings' 경로를 다시 붙이지 않고, 
+        // express-http-proxy가 남긴 '/list' 경로만 그대로 반환합니다.
+        const path = `${req.url}`;
         console.log(`[Booking] Forwarding to: ${path}`);
         return path;
     }

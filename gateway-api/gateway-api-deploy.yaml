@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: gateway-api
-        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api:202512100330
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-api:202512150535
         ports:
         - containerPort: 3000 # 실제 API Gateway가 리스닝하는 포트
         # 💥 Time-out 설정 추가 (300초 = 300000ms)

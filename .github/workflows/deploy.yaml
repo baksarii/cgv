@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  EKS_CLUSTER_NAME: cgv-eks
+  EKS_CLUSTER_NAME: my-new-eks-cluster
   AWS_ACCOUNT_ID: 343218219945 # 고객님의 AWS 계정 ID
 
   # --- ECR URI 설정 (반드시 고객님의 ECR URI로 확인/대체되어야 함) ---

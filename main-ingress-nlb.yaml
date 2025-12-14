@@ -1,0 +1,28 @@
+# 5. Ingress (NLB 생성 및 외부 노출) - TCP Health Check 해결용
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress-nlb # 👈 이름 변경 (NLB 생성 유도)
+  annotations:
+    # 💥 ALB 대신 NLB 생성을 강제
+    alb.ingress.kubernetes.io/load-balancer-type: nlb 
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip 
+    alb.ingress.kubernetes.io/listen-ports: '[{"TCP": 80}]' # 👈 TCP 리스너로 변경
+    
+    # NLB Target Group Health Check는 TCP로 설정됨 (503 문제 해결)
+    alb.ingress.kubernetes.io/healthcheck-port: "3000" 
+    alb.ingress.kubernetes.io/success-codes: "200"
+    
+spec:
+  ingressClassName: alb # LBC를 사용하는 IngressClass는 그대로 둠
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-api-svc
+            port:
+              number: 80

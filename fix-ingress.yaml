@@ -1,0 +1,23 @@
+# fix-ingress.yaml 파일 내용 (Webhook 우회를 위한 v1beta1 버전)
+
+apiVersion: extensions/v1beta1 # 👈 주목! API 버전을 변경합니다.
+kind: Ingress
+metadata:
+  name: cgv-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    
+    # 🚨 Time-out 설정을 5분(300초)으로 확장
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=300
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    kubernetes.io/ingress.class: alb # 👈 v1beta1에서는 이 주석을 다시 사용합니다.
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          serviceName: gateway-api-svc # 👈 v1beta1에서는 serviceName 필드를 사용합니다.
+          servicePort: 80 # 👈 v1beta1에서는 servicePort 필드를 사용합니다.
