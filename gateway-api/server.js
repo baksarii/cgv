@@ -1,32 +1,47 @@
 const express = require('express');
 const proxy = require('express-http-proxy');
 const app = express();
-const port = 3000;
+const port = 3000; // Gateway API가 리스닝하는 포트
 
-// --- Service Endpoints (Kubernetes Service Name으로 대체될 예정) ---
-// 로컬 테스트 환경에서는 localhost를 사용하지만, EKS에서는 Kubernetes Service 이름을 사용합니다.
-const SHOWTIME_SERVICE_URL = 'http://localhost:3001'; // EKS: http://showtime-service.default.svc.cluster.local
-const BOOKING_SERVICE_URL = 'http://localhost:3002'; // EKS: http://booking-service.default.svc.cluster.local
+// --- Service Endpoints (Kubernetes Service Name) ---
+const SHOWTIME_SERVICE_URL = 'http://showtime-service-svc:80'; 
+const BOOKING_SERVICE_URL = 'http://booking-service-svc:80'; 
 
-// Showtime Service로 라우팅
+
+// --- 라우팅 설정 ---
+
+// 1. Showtime Service로 라우팅
 app.use('/api/v1/showtimes', proxy(SHOWTIME_SERVICE_URL, {
-  proxyReqPathResolver: req => `/showtimes${req.url}`
+    proxyReqPathResolver: req => {
+        // 🚨 수정: 제거된 '/api/v1/showtimes' 경로를 다시 붙여서 전달합니다.
+        const path = `/api/v1/showtimes${req.url}`; 
+        console.log(`[Showtime] Forwarding to: ${path}`);
+        return path;
+    }
 }));
 
-// Booking Service로 라우팅
-app.use('/api/v1/booking', proxy(BOOKING_SERVICE_URL, {
-  proxyReqPathResolver: req => `/book${req.url}`
-}));
-
+// 2. Booking Service로 라우팅
 app.use('/api/v1/bookings', proxy(BOOKING_SERVICE_URL, {
-  proxyReqPathResolver: req => `/bookings${req.url}`
+    proxyReqPathResolver: req => {
+        // 🚨 수정: 제거된 '/api/v1/bookings' 경로를 다시 붙여서 전달합니다.
+        const path = `/api/v1/bookings${req.url}`;
+        console.log(`[Booking] Forwarding to: ${path}`);
+        return path;
+    }
 }));
 
-// 기본 헬스 체크
+
+// 기본 헬스 체크 (변경 없음)
 app.get('/health', (req, res) => {
-    res.send('Gateway is healthy.');
+    res.status(200).send('Gateway is healthy.');
 });
 
+// 루트 경로 (변경 없음)
+app.get('/', (req, res) => {
+    res.status(200).send('Welcome to the CGV Microservice Gateway!');
+});
+
+
 app.listen(port, () => {
-  console.log(`Gateway API listening on port ${port}`);
+    console.log(`Gateway API listening on port ${port}`);
 });
