@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: booking-service
-        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service:202512150810
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service:202512150834
         ports:
         - containerPort: 3002
         

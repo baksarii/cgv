@@ -1,5 +1,5 @@
 ---
-# 1. Deployment (Pod 정의)
+# 1. Deployment (Pod 정의 및 RDS Secret 연결)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,26 +18,32 @@ spec:
     spec:
       containers:
       - name: showtime-service
-        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/showtime-service:202512150615
+        # ⚠️ ECR 이미지 태그를 새로 빌드할 버전으로 업데이트해야 합니다.
+        image: 343218219945.dkr.ecr.ap-northeast-2.amazonaws.com/showtime-service:202512150941
         ports:
         - containerPort: 3001 
         
-        # 💡 DB 접속 정보를 위한 환경 변수(env) 추가 시작
+        # ⬇️ DB 접속 정보를 Kubernetes Secret에서 가져오도록 수정 ⬇️
         env:
         - name: DB_HOST
-          value: "cgv-db.cvsiy4oi6x0z.ap-northeast-2.rds.amazonaws.com" # ⚠️ RDS 엔드포인트
-        - name: DB_USER
-          value: "admin"
+          valueFrom:
+            secretKeyRef:
+              name: rds-credentials
+              key: host
+        - name: DB_USER # 💡 코드에서 process.env.DB_USER로 참조됨
+          valueFrom:
+            secretKeyRef:
+              name: rds-credentials
+              key: username # ⚠️ rds-credentials Secret은 key가 'username'입니다.
         - name: DB_PASSWORD
-          # 🚨 보안에 취약하므로, 실제 운영 환경에서는 Kubernetes Secret을 사용해야 합니다.
-          # 🚨 현재는 테스트를 위해 직접 입력합니다. (재설정한 새 비밀번호 사용)
-          value: "12341234" 
-        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: rds-credentials
+              key: password
+        - name: DB_NAME # 💡 DB 이름 환경 변수 추가
           value: "cgv_showtime_db"
-        # 💡 환경 변수 추가 끝
-        
 ---
-# 2. Service (내부 로드 밸런싱 정의)
+# 2. Service (내부 로드 밸런싱 정의 - 변경 없음)
 apiVersion: v1
 kind: Service
 metadata:
